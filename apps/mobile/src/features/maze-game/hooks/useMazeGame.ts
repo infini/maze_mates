@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { levels } from '../../../data/levels';
+import { difficulties } from '../../../data/levels';
 import { settings } from '../../../data/settings';
 import { buildTrailMap, createInitialState, moveExplorerTo, prepareLevel } from '../../../game/maze';
 import type { ExplorerId } from '../../../game/types';
@@ -18,8 +18,10 @@ import {
 import type { TimerStates } from '../utils/timer';
 
 export function useMazeGame() {
-  const [levelIndex, setLevelIndex] = useState(0);
-  const levelData = levels[levelIndex] ?? levels[0];
+  const [difficultyIndex, setDifficultyIndex] = useState(0);
+  const [stageIndex, setStageIndex] = useState(0);
+  const difficulty = difficulties[difficultyIndex] ?? difficulties[0];
+  const levelData = difficulty.stages[stageIndex] ?? difficulty.stages[0];
   const level = useMemo(() => prepareLevel(levelData), [levelData]);
   const [activeExplorer, setActiveExplorer] = useState<ExplorerId>('parent');
   const [now, setNow] = useState(() => Date.now());
@@ -147,28 +149,40 @@ export function useMazeGame() {
     [activeExplorer],
   );
 
-  const loadLevel = useCallback((nextIndex: number) => {
-    setLevelIndex(Math.max(0, Math.min(levels.length - 1, nextIndex)));
+  const loadStage = useCallback(
+    (nextIndex: number) => {
+      setStageIndex(Math.max(0, Math.min(difficulty.stages.length - 1, nextIndex)));
+    },
+    [difficulty.stages.length],
+  );
+
+  const selectDifficulty = useCallback((nextDifficultyIndex: number) => {
+    const clampedIndex = Math.max(0, Math.min(difficulties.length - 1, nextDifficultyIndex));
+    setDifficultyIndex(clampedIndex);
+    setStageIndex(0);
   }, []);
 
   return {
     activeExplorer,
     animationResetKey,
-    canLoadNext: levelIndex < levels.length - 1,
-    canLoadPrevious: levelIndex > 0,
+    canLoadNextStage: stageIndex < difficulty.stages.length - 1,
+    canLoadPreviousStage: stageIndex > 0,
+    difficulties,
+    difficultyIndex,
     elapsedMs,
     gameState,
     hasStarted,
     isPaused,
     level,
-    levelIndex,
-    levelsCount: levels.length,
-    loadLevel,
+    loadStage,
     onCellPress: commitMove,
     onPauseToggle: pauseActiveRun,
     onReset: resetActiveRun,
+    onSelectDifficulty: selectDifficulty,
     onSelectExplorer: selectExplorer,
     onStartPress: startActiveRun,
+    stageIndex,
+    stagesInDifficulty: difficulty.stages.length,
     statusText: getStatusText({ activeExplorer, gameState, hasStarted, isPaused }),
     trailMap,
   };

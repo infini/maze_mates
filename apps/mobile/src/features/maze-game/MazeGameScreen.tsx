@@ -60,21 +60,24 @@ export function MazeGameScreen() {
         <GameHud
           activeExplorer={game.activeExplorer}
           boardSize={boardSize}
-          canLoadNext={game.canLoadNext}
-          canLoadPrevious={game.canLoadPrevious}
+          canLoadNextStage={game.canLoadNextStage}
+          canLoadPreviousStage={game.canLoadPreviousStage}
+          difficulties={game.difficulties}
+          difficultyIndex={game.difficultyIndex}
           elapsedMs={game.elapsedMs}
           gameState={game.gameState}
           hasStarted={game.hasStarted}
           isLandscape={isLandscape}
           isPaused={game.isPaused}
           level={game.level}
-          levelIndex={game.levelIndex}
-          levelsCount={game.levelsCount}
-          onLoadLevel={game.loadLevel}
+          onLoadStage={game.loadStage}
           onPauseToggle={game.onPauseToggle}
           onReset={game.onReset}
+          onSelectDifficulty={game.onSelectDifficulty}
           onSelectExplorer={game.onSelectExplorer}
           onStartPress={game.onStartPress}
+          stageIndex={game.stageIndex}
+          stagesInDifficulty={game.stagesInDifficulty}
           statusText={game.statusText}
         />
       </View>

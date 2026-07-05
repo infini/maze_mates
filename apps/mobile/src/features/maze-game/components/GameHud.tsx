@@ -1,47 +1,53 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { settings } from '../../../data/settings';
-import type { ExplorerId, GameState, PreparedLevel } from '../../../game/types';
+import type { DifficultyData, ExplorerId, GameState, PreparedLevel } from '../../../game/types';
 import { explorerOrder, explorerTheme } from '../constants';
 import { formatElapsedTime } from '../utils/timer';
 
 export function GameHud({
   activeExplorer,
   boardSize,
-  canLoadNext,
-  canLoadPrevious,
+  canLoadNextStage,
+  canLoadPreviousStage,
+  difficulties,
+  difficultyIndex,
   elapsedMs,
   gameState,
   hasStarted,
   isLandscape,
   isPaused,
   level,
-  levelIndex,
-  levelsCount,
-  onLoadLevel,
+  onLoadStage,
   onPauseToggle,
   onReset,
+  onSelectDifficulty,
   onSelectExplorer,
   onStartPress,
+  stageIndex,
+  stagesInDifficulty,
   statusText,
 }: {
   activeExplorer: ExplorerId;
   boardSize: number;
-  canLoadNext: boolean;
-  canLoadPrevious: boolean;
+  canLoadNextStage: boolean;
+  canLoadPreviousStage: boolean;
+  difficulties: DifficultyData[];
+  difficultyIndex: number;
   elapsedMs: number;
   gameState: GameState;
   hasStarted: boolean;
   isLandscape: boolean;
   isPaused: boolean;
   level: PreparedLevel;
-  levelIndex: number;
-  levelsCount: number;
-  onLoadLevel: (index: number) => void;
+  onLoadStage: (index: number) => void;
   onPauseToggle: () => void;
   onReset: () => void;
+  onSelectDifficulty: (index: number) => void;
   onSelectExplorer: (explorerId: ExplorerId) => void;
   onStartPress: () => void;
+  stageIndex: number;
+  stagesInDifficulty: number;
   statusText: string;
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -60,10 +66,16 @@ export function GameHud({
             MazeMates
           </Text>
           <Text numberOfLines={1} style={styles.levelTitle}>
-            {level.titleKo} · {levelIndex + 1}/{levelsCount}
+            {level.difficultyKo} · {stageIndex + 1}/{stagesInDifficulty}
           </Text>
         </View>
       </View>
+
+      <DifficultySelector
+        activeIndex={difficultyIndex}
+        difficulties={difficulties}
+        onSelect={onSelectDifficulty}
+      />
 
       <View style={styles.iconCluster}>
         <StartButton
@@ -94,7 +106,7 @@ export function GameHud({
           <Text style={styles.timerText}>{formatElapsedTime(elapsedMs)}</Text>
         </View>
         <Text style={styles.stageText}>
-          {level.difficultyKo} {level.stageNumber} / 50 · 이동 {gameState.moves}
+          {level.difficultyKo} {level.stageNumber} / {stagesInDifficulty} · 이동 {gameState.moves}
         </Text>
       </View>
 
@@ -130,23 +142,63 @@ export function GameHud({
 
         <View style={styles.stageNavRow}>
           <StageNavButton
-            disabled={!canLoadPrevious}
+            disabled={!canLoadPreviousStage}
             label="‹"
-            onPress={() => onLoadLevel(levelIndex - 1)}
+            onPress={() => onLoadStage(stageIndex - 1)}
           />
           <View style={styles.stageCounter}>
             <Text style={styles.stageCounterTitle}>스테이지</Text>
             <Text style={styles.stageCounterText}>
-              {levelIndex + 1} / {levelsCount}
+              {stageIndex + 1} / {stagesInDifficulty}
             </Text>
           </View>
           <StageNavButton
-            disabled={!canLoadNext}
+            disabled={!canLoadNextStage}
             label="›"
-            onPress={() => onLoadLevel(levelIndex + 1)}
+            onPress={() => onLoadStage(stageIndex + 1)}
           />
         </View>
       </View>
+    </View>
+  );
+}
+
+function DifficultySelector({
+  activeIndex,
+  difficulties,
+  onSelect,
+}: {
+  activeIndex: number;
+  difficulties: DifficultyData[];
+  onSelect: (index: number) => void;
+}) {
+  return (
+    <View style={styles.difficultyRow}>
+      {difficulties.map((difficulty, index) => {
+        const selected = index === activeIndex;
+        return (
+          <Pressable
+            key={difficulty.id}
+            onPress={() => onSelect(index)}
+            style={({ pressed }) => [
+              styles.difficultyButton,
+              selected ? styles.difficultyButtonSelected : null,
+              pressed ? styles.difficultyButtonPressed : null,
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              style={[
+                styles.difficultyButtonText,
+                selected ? styles.difficultyButtonTextSelected : null,
+              ]}
+            >
+              {difficulty.labelKo}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -277,6 +329,36 @@ const styles = StyleSheet.create({
     color: '#85fff7',
     fontSize: 15,
     fontWeight: '700',
+  },
+  difficultyRow: {
+    minHeight: 38,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  difficultyButton: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#344461',
+    backgroundColor: '#10172a',
+    paddingHorizontal: 4,
+  },
+  difficultyButtonSelected: {
+    borderColor: '#85fff7',
+    backgroundColor: '#19324a',
+  },
+  difficultyButtonPressed: {
+    backgroundColor: '#24365f',
+  },
+  difficultyButtonText: {
+    color: '#b8c3df',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  difficultyButtonTextSelected: {
+    color: '#f8f4dc',
   },
   statusBand: {
     minHeight: 74,
