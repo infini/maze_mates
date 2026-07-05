@@ -14,6 +14,18 @@ USB로 연결한 Android 태블릿에서 실행할 때는 Expo Go 또는 Android
 npm run android
 ```
 
+## Android 설치
+
+Expo Go에서 실행하는 것은 개발 미리보기이고, 태블릿 홈 화면에 `MazeMates` 앱으로 설치되지는 않습니다. 독립 앱으로 설치하려면 APK를 빌드해서 설치합니다.
+
+```sh
+npm run prebuild:android
+npm run build:android:release
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+```
+
+Android 패키지 ID는 `com.infini.mazemates`입니다. 릴리스 APK는 JavaScript 번들을 앱 안에 포함하므로 Metro 개발 서버 없이 실행됩니다.
+
 ## 게임 흐름
 
 1. `초보`, `중수`, `고수`, `초고수`, `신` 중 난이도를 선택합니다.
