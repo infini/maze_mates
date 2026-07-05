@@ -243,6 +243,155 @@ function explorerTile(primary, secondary, accent) {
   return image;
 }
 
+function iconBackground(size) {
+  const image = createImage(size, size);
+  const base = color('#07101f');
+  const warm = color('#172640');
+  fill(image, base);
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const n = pseudoNoise(x, y, 41);
+      const amount = 0.12 + n * 0.18;
+      setPixel(image, x, y, [
+        mix(base[0], warm[0], amount),
+        mix(base[1], warm[1], amount),
+        mix(base[2], warm[2], amount),
+        255,
+      ]);
+    }
+  }
+
+  const gridStep = Math.floor(size / 8);
+  for (let line = gridStep; line < size; line += gridStep) {
+    fillRect(image, line - 2, 0, 4, size, color('#263753', 90));
+    fillRect(image, 0, line - 2, size, 4, color('#263753', 90));
+  }
+
+  return image;
+}
+
+function drawBlock(image, x, y, width, height, primary, top, side) {
+  fillRect(image, x, y, width, height, primary);
+  fillRect(image, x, y, width, Math.max(2, Math.floor(height * 0.12)), top);
+  fillRect(image, x, y, Math.max(2, Math.floor(width * 0.12)), height, top);
+  fillRect(image, x + width - Math.max(2, Math.floor(width * 0.12)), y, Math.max(2, Math.floor(width * 0.12)), height, side);
+  fillRect(image, x, y + height - Math.max(2, Math.floor(height * 0.12)), width, Math.max(2, Math.floor(height * 0.12)), side);
+}
+
+function drawIconMaze(image, { monochrome = false } = {}) {
+  const size = image.width;
+  const maze = [
+    '#########',
+    '#...#...#',
+    '#.#.#.#.#',
+    '#.#...#.#',
+    '#.#####.#',
+    '#.....#.#',
+    '###.#.#.#',
+    '#...#...#',
+    '#########',
+  ];
+  const margin = Math.floor(size * 0.11);
+  const cell = Math.floor((size - margin * 2) / maze.length);
+  const boardSize = cell * maze.length;
+  const startX = Math.floor((size - boardSize) / 2);
+  const startY = Math.floor((size - boardSize) / 2);
+  const wallColor = monochrome ? color('#ffffff') : color('#6677a3');
+  const wallTop = monochrome ? color('#ffffff') : color('#a6b5e5');
+  const wallSide = monochrome ? color('#d7ddef') : color('#243150');
+  const floorColor = monochrome ? color('#000000', 0) : color('#101b31', 180);
+  const routeColor = monochrome ? color('#ffffff') : color('#7cff58');
+  const routeAccent = monochrome ? color('#ffffff') : color('#58e0ff');
+  const keyColor = monochrome ? color('#ffffff') : color('#f8e16c');
+  const exitColor = monochrome ? color('#ffffff') : color('#85fff7');
+
+  fillRect(image, startX - Math.floor(cell * 0.18), startY - Math.floor(cell * 0.18), boardSize + Math.floor(cell * 0.36), boardSize + Math.floor(cell * 0.36), monochrome ? color('#000000', 0) : color('#07101f', 210));
+
+  maze.forEach((row, rowIndex) => {
+    [...row].forEach((tile, colIndex) => {
+      const x = startX + colIndex * cell;
+      const y = startY + rowIndex * cell;
+      if (tile === '#') {
+        drawBlock(
+          image,
+          x + Math.floor(cell * 0.05),
+          y + Math.floor(cell * 0.05),
+          Math.ceil(cell * 0.9),
+          Math.ceil(cell * 0.9),
+          wallColor,
+          wallTop,
+          wallSide,
+        );
+        return;
+      }
+      if (!monochrome) {
+        fillRect(image, x + Math.floor(cell * 0.08), y + Math.floor(cell * 0.08), Math.ceil(cell * 0.84), Math.ceil(cell * 0.84), floorColor);
+      }
+    });
+  });
+
+  const center = (row, col) => ({
+    x: startX + col * cell + Math.floor(cell / 2),
+    y: startY + row * cell + Math.floor(cell / 2),
+  });
+  const route = [
+    center(1, 1),
+    center(1, 3),
+    center(3, 3),
+    center(3, 5),
+    center(1, 5),
+    center(1, 7),
+    center(7, 7),
+  ];
+  const routeWidth = Math.max(16, Math.floor(cell * 0.24));
+  for (let index = 1; index < route.length; index += 1) {
+    drawLine(image, route[index - 1].x, route[index - 1].y, route[index].x, route[index].y, routeWidth + Math.floor(routeWidth * 0.8), monochrome ? color('#ffffff', 90) : color('#3df7ce', 70));
+    drawLine(image, route[index - 1].x, route[index - 1].y, route[index].x, route[index].y, routeWidth, index % 2 === 0 ? routeAccent : routeColor);
+  }
+
+  const parent = center(1, 1);
+  const child = center(1, 2);
+  const tokenSize = Math.floor(cell * 0.38);
+  fillRect(image, parent.x - tokenSize, parent.y - tokenSize, tokenSize * 2, tokenSize * 2, monochrome ? color('#ffffff') : color('#7cff58'));
+  fillRect(image, child.x - tokenSize, child.y - tokenSize, tokenSize * 2, tokenSize * 2, monochrome ? color('#ffffff') : color('#58e0ff'));
+  fillRect(image, parent.x - Math.floor(tokenSize * 0.45), parent.y - Math.floor(tokenSize * 0.18), Math.floor(tokenSize * 0.9), Math.floor(tokenSize * 0.36), color('#07101f'));
+  fillRect(image, child.x - Math.floor(tokenSize * 0.45), child.y - Math.floor(tokenSize * 0.18), Math.floor(tokenSize * 0.9), Math.floor(tokenSize * 0.36), color('#07101f'));
+
+  const key = center(7, 3);
+  fillCircle(image, key.x - Math.floor(cell * 0.12), key.y - Math.floor(cell * 0.12), Math.floor(cell * 0.17), keyColor);
+  fillCircle(image, key.x - Math.floor(cell * 0.12), key.y - Math.floor(cell * 0.12), Math.floor(cell * 0.08), monochrome ? color('#000000', 0) : color('#07101f'));
+  drawLine(image, key.x, key.y, key.x + Math.floor(cell * 0.34), key.y + Math.floor(cell * 0.34), Math.floor(cell * 0.12), keyColor);
+  fillRect(image, key.x + Math.floor(cell * 0.2), key.y + Math.floor(cell * 0.25), Math.floor(cell * 0.26), Math.floor(cell * 0.1), keyColor);
+
+  const exit = center(7, 7);
+  drawLine(image, exit.x - Math.floor(cell * 0.26), exit.y + Math.floor(cell * 0.22), exit.x + Math.floor(cell * 0.26), exit.y + Math.floor(cell * 0.22), Math.floor(cell * 0.12), exitColor);
+  drawLine(image, exit.x - Math.floor(cell * 0.22), exit.y + Math.floor(cell * 0.22), exit.x - Math.floor(cell * 0.22), exit.y - Math.floor(cell * 0.1), Math.floor(cell * 0.12), exitColor);
+  drawLine(image, exit.x + Math.floor(cell * 0.22), exit.y + Math.floor(cell * 0.22), exit.x + Math.floor(cell * 0.22), exit.y - Math.floor(cell * 0.1), Math.floor(cell * 0.12), exitColor);
+  drawLine(image, exit.x - Math.floor(cell * 0.22), exit.y - Math.floor(cell * 0.1), exit.x, exit.y - Math.floor(cell * 0.32), Math.floor(cell * 0.12), exitColor);
+  drawLine(image, exit.x, exit.y - Math.floor(cell * 0.32), exit.x + Math.floor(cell * 0.22), exit.y - Math.floor(cell * 0.1), Math.floor(cell * 0.12), exitColor);
+}
+
+function appIcon(size) {
+  const image = iconBackground(size);
+  drawIconMaze(image);
+  return image;
+}
+
+function adaptiveIconForeground(size) {
+  const image = createImage(size, size);
+  fill(image, color('#000000', 0));
+  drawIconMaze(image);
+  return image;
+}
+
+function monochromeIcon(size) {
+  const image = createImage(size, size);
+  fill(image, color('#000000', 0));
+  drawIconMaze(image, { monochrome: true });
+  return image;
+}
+
 writePng(join(rootDir, 'assets/tiles/floor.png'), floorTile());
 writePng(join(rootDir, 'assets/tiles/wall.png'), wallTile());
 writePng(join(rootDir, 'assets/tiles/exit.png'), exitTile());
@@ -255,3 +404,9 @@ writePng(
   join(rootDir, 'assets/characters/child.png'),
   explorerTile('#3aa0ff', '#69c4ff', '#58e0ff'),
 );
+writePng(join(rootDir, 'assets/icon.png'), appIcon(1024));
+writePng(join(rootDir, 'assets/favicon.png'), appIcon(256));
+writePng(join(rootDir, 'assets/splash-icon.png'), adaptiveIconForeground(1024));
+writePng(join(rootDir, 'assets/android-icon-background.png'), iconBackground(1024));
+writePng(join(rootDir, 'assets/android-icon-foreground.png'), adaptiveIconForeground(1024));
+writePng(join(rootDir, 'assets/android-icon-monochrome.png'), monochromeIcon(432));
